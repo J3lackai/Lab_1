@@ -19,47 +19,26 @@ QString fileSize(qint64 nSize) {
     for (; nSize > 1023; nSize /= 1024, ++i) { }
     return QString().setNum(nSize) + "BKMGT"[i];
 }
-void print_files(QString path, QTextStream& stream)
-{
-    if (!QDir(path).exists())
-    {
-        qWarning() << "Directory does not exist:" << path;
-        return;
-    }
-    QDirIterator itFiles(path, QDir::Files);
-    while (itFiles.hasNext()) {
-        itFiles.next();
 
-        QFileInfo info = itFiles.fileInfo();
-        stream << "F | " << info.fileName() << " | " << fileSize(info.size()) << " | "
-               << info.lastModified().toString() << " | ";
-        print_attribs(info, stream);
-        stream << "\n";
-    }
-}
-void print_all(QString path, QTextStream& stream) {
+void print_all(const QString& path, QTextStream& stream) {
     if (!QDir(path).exists())
     {
         qWarning() << "Directory does not exist:" << path;
         return;
     }
-    QDirIterator itDirs(path, QDir::Dirs);
+    QDirIterator itDirs(path,
+            QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot,
+                    QDirIterator::Subdirectories);
 
     while (itDirs.hasNext()) {
-        itDirs.next();
-
-        if (itDirs.fileName() == ".")
-            continue;
-
-        QFileInfo info = itDirs.fileInfo();
-        stream << "D | " << info.fileName() << " | " << fileSize(info.size()) << " | "
-               << info.lastModified().toString() << " | ";
+        QFileInfo info(itDirs.next());
+        stream << (info.isDir() ? "D" : "F") << " | "
+               << info.filePath() << " | "
+               << fileSize(info.size()) << " | "
+               << info.lastModified().toString("dd.MM.yyyy hh:mm:ss") << " | ";
         print_attribs(info, stream);
         stream << "\n";
     }
-    print_files(path,stream);
-
-
 }
 
 
