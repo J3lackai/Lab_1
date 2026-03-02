@@ -2,8 +2,11 @@
 #include <QCoreApplication>
 #include <QDirIterator>
 #include <QFileInfo>
+#include <string>
 using namespace std;
-void print_attribs(QFileInfo& info, QTextStream& stream) {
+
+void print_attribs(QFileInfo& info, QTextStream& stream)
+{//Функция вывода аттрибутов у файла или папки
     if (info.isReadable())
         stream << "R";
     if (info.isWritable())
@@ -15,12 +18,14 @@ void print_attribs(QFileInfo& info, QTextStream& stream) {
 }
 
 QString fileSize(qint64 nSize) {
+    //Фунция выводит размер файла/папки
     qint64 i = 0;
     for (; nSize > 1023; nSize /= 1024, ++i) { }
     return QString().setNum(nSize) + "BKMGT"[i];
 }
 
 void print_all(const QString& path, QTextStream& stream) {
+    //Функция решает подзадачу рекурсивного обхода папки по пути и вывода всех файлов и папок
     if (!QDir(path).exists())
     {
         qWarning() << "Directory does not exist:" << path;
@@ -35,7 +40,7 @@ void print_all(const QString& path, QTextStream& stream) {
         stream << (info.isDir() ? "D" : "F") << " | "
                << info.filePath() << " | "
                << fileSize(info.size()) << " | "
-               << info.lastModified().toString("dd.MM.yyyy hh:mm:ss") << " | ";
+               << info.lastModified().toString("dd.MM.yy") << " | ";
         print_attribs(info, stream);
         stream << "\n";
     }
@@ -44,9 +49,13 @@ void print_all(const QString& path, QTextStream& stream) {
 
 int main()
 {
-    QString path("C:\\qt15.0.1\\projects\\Lab_1");
+    string raw_path;
+    QTextStream out(stdout);
+    out << "Input path: ";
+    out.flush();  // Принудительно выводим сообщение
+    cin >> raw_path; //Пример C:\qt15.0.1\projects\Lab_1
     QTextStream stream(stdout);
+    QString path = QString::fromStdString(raw_path);//Преобразуем путь: String -> QString
     print_all(path,stream);
-    cout << "Complete!";
     return 0;
 }
