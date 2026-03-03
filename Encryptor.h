@@ -23,7 +23,7 @@ private:
                      const QByteArray& key);
     void decryptFile(const QString& inputPath, const QString& outputPath,
                      const QByteArray& key);
-    void traverseDirectory(const QString& directoryPath,
+    bool traverseDirectory(const QString& path,
                            const QString& password, bool encrypt);
     // наработки из task1 будут здесь
 };
