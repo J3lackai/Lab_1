@@ -1,6 +1,31 @@
-#include <Encryptor.cpp>
-class Encryptor
-{
-    Encryptor();
-    ~Encryptor();
+#ifndef ENCRYPTOR_H
+#define ENCRYPTOR_H
+#include <QString>
+#include <QByteArray>
+
+class Encryptor {
+public:
+    static Encryptor& getInstance();
+
+    //методы для шифрования/дешифрования директории по пути
+    bool encryptDirectory(const QString& path, const QString& password);
+    bool decryptDirectory(const QString& path, const QString& password);
+
+private:
+    Encryptor() = default;
+    //делаем конструктор приватным
+    Encryptor(const Encryptor&) = delete;
+    Encryptor& operator=(const Encryptor&) = delete;
+    // запрещаем копирование и присвоение согласно паттерну Синглтон
+    bool processFile(const QString& filePath, const QString& password, bool encrypt);
+    QByteArray deriveKey(const QString& password);
+    void encryptFile(const QString& inputPath, const QString& outputPath,
+                     const QByteArray& key);
+    void decryptFile(const QString& inputPath, const QString& outputPath,
+                     const QByteArray& key);
+    void traverseDirectory(const QString& directoryPath,
+                           const QString& password, bool encrypt);
+    // наработки из task1 будут здесь
 };
+#endif // ENCRYPTOR_H
+
