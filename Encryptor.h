@@ -2,7 +2,7 @@
 #define ENCRYPTOR_H
 #include <QString>
 #include <QByteArray>
-
+#include <QDebug>
 class Encryptor {
 public:
     static Encryptor& getInstance();
