@@ -3,6 +3,7 @@
 #include <QString>
 #include <QByteArray>
 #include <QDebug>
+#include <QDir>
 class Encryptor {
 public:
     static Encryptor& getInstance();
@@ -23,7 +24,7 @@ private:
                      const QByteArray& key);
     void decryptFile(const QString& inputPath, const QString& outputPath,
                      const QByteArray& key);
-    bool traverseDirectory(const QString& path,
+    bool traverseDirectory(const QString& pathFolder,
                            const QString& password, bool encrypt);
     // наработки из task1 будут здесь
 };

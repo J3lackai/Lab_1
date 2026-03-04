@@ -14,16 +14,21 @@ Encryptor& Encryptor::getInstance() {
     return instance;
 }
 
-bool Encryptor::traverseDirectory(const QString& path,
+bool Encryptor::traverseDirectory(const QString& pathFolder,
                                   const QString& password, bool encrypt) {
     //Функция решает подзадачу рекурсивного обхода папки по пути для шифрования/дешифрования содержимого
-    QDir dir(path);
+    QDir dir(pathFolder);
     if (!dir.exists())
     {
-        qWarning() << "Directory does not exist:" << path;
+        qWarning() << "Directory does not exist:" << pathFolder;
         return false;
     }
-    QDirIterator itDirs(path,
+    QString projectPath = QDir::current().path(); // Получили путь к папке где собирается проект, обычно собирается в папке проекта
+    if (projectPath.startsWith(dir.path())) {
+        qWarning() << "You cannot encrypt the folder where the project is located!";
+        return false;
+    }// Нельзя шифровать папку проекта
+    QDirIterator itDirs(pathFolder,
                         QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot,
                         QDirIterator::Subdirectories);
     bool success = true;
@@ -46,24 +51,23 @@ bool Encryptor::encryptDirectory(const QString& path, const QString& password) {
 bool Encryptor::decryptDirectory(const QString& path, const QString& password) {
     return traverseDirectory(path, password, false);
 }
-bool Encryptor::processFile(const QString& filePath,
-                            const QString& password, bool encrypt) {
+bool Encryptor::processFile(const QString& filePath,const QString& password, bool encrypt) {
     QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly)) {
         qWarning() << "Cannot open file for reading:" << filePath;
         return false;
     }
     file.close();
-
     QByteArray key = deriveKey(password);
     QString outputPath = filePath + (encrypt ? ".enc" : "");// формируем путь к файлу
 
     if (encrypt) {
         // Проверяем, не зашифрован ли уже файл
         if (filePath.endsWith(".enc", Qt::CaseInsensitive)) {
-            qDebug() << "The file is already encrypted, skip it:" << filePath;
+            qInfo() << "The file is already encrypted, skip it:" << filePath;
             return true; // Просто пропускаем
         }
+
         encryptFile(filePath, outputPath, key);
         QFile::remove(filePath); // Удаляем оригинал после шифрования
     } else {
@@ -73,8 +77,8 @@ bool Encryptor::processFile(const QString& filePath,
             decryptFile(filePath, outputPath, key);
             QFile::remove(filePath); // Удаляем зашифрованный файл
         } else {
-            qDebug() << "Skipping non-encrypted file:" << filePath;
-            return false;
+            qInfo() << "Skipping non-encrypted file:" << filePath;
+            return true;
         }
     }
     return true;
@@ -92,7 +96,7 @@ void Encryptor::encryptFile(const QString& inputPath,
     QFile output(outputPath);
 
     if (!input.open(QIODevice::ReadOnly) || !output.open(QIODevice::WriteOnly)) {
-        qDebug() << "Error opening files for encryption.";
+        qInfo() << "Error opening files for encryption.";
         return;
     }
 
@@ -131,7 +135,7 @@ void Encryptor::encryptFile(const QString& inputPath,
 
     EVP_CIPHER_CTX_free(ctx);
     QFile::remove(inputPath);
-    qDebug() << "Encrypted:" << inputPath << "->" << outputPath;
+    qInfo() << "Encrypted:" << inputPath << "->" << outputPath;
 }
 
 void Encryptor::decryptFile(const QString& inputPath,
@@ -141,7 +145,7 @@ void Encryptor::decryptFile(const QString& inputPath,
     QFile output(outputPath);
 
     if (!input.open(QIODevice::ReadOnly) || !output.open(QIODevice::WriteOnly)) {
-        qDebug() << "Error opening files for decryption.";
+        qInfo() << "Error opening files for decryption.";
         return;
     }
 
@@ -178,5 +182,5 @@ void Encryptor::decryptFile(const QString& inputPath,
 
     EVP_CIPHER_CTX_free(ctx);
     QFile::remove(inputPath);
-    qDebug() << "Decrypted:" << inputPath << "->" << outputPath;
+    qInfo() << "Decrypted:" << inputPath << "->" << outputPath;
 }
