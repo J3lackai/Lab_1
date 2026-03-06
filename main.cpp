@@ -30,9 +30,9 @@ int main()
     Encryptor& enc = Encryptor::getInstance();
     QString res;
     if (mode == "e")
-        res = enc.encryptDirectory(path, pswrd) ? "\nComplete encrypt!" : "\nError encrypt!";
+        res = enc.encryptData(path, pswrd) ? "\nComplete encrypt!" : "\nError encrypt!";
     else
-        res = enc.decryptDirectory(path, pswrd) ? "\nComplete decrypt!" : "\nError decrypt!";
+        res = enc.decryptData(path, pswrd) ? "\nComplete decrypt!" : "\nError decrypt!";
     qInfo() << res;
     return 0;
 }

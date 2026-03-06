@@ -1,5 +1,6 @@
 #include <Encryptor.h>
 #include <QDir>
+#include <QFile>
 #include <QDirIterator>
 #include <QCryptographicHash>
 #define OPENSSL_USE_STATIC_LIBS 1
@@ -14,21 +15,26 @@ Encryptor& Encryptor::getInstance() {
     return instance;
 }
 
-bool Encryptor::traverseDirectory(const QString& pathFolder,
+bool Encryptor::traverseDirectory(const QString& path,
                                   const QString& password, bool encrypt) {
     //Функция решает подзадачу рекурсивного обхода папки по пути для шифрования/дешифрования содержимого
-    QDir dir(pathFolder);
+    QDir dir(path);
     if (!dir.exists())
     {
-        qWarning() << "Directory does not exist:" << pathFolder;
+        QFile file(path);
+        if (!file.exists())
+        {
+         qWarning() << "Directory or file does not exist:" << path;
         return false;
+        }//Шифруем только файл если путь ведёт к файлу, а не папке
+        return processFile(path, password, encrypt);
     }
     QString projectPath = QDir::current().path(); // Получили путь к папке где собирается проект, обычно собирается в папке проекта
     if (projectPath.startsWith(dir.path())) {
         qWarning() << "You cannot encrypt the folder where the project is located!";
         return false;
     }// Нельзя шифровать папку проекта
-    QDirIterator itDirs(pathFolder,
+    QDirIterator itDirs(path,
                         QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot,
                         QDirIterator::Subdirectories);
     bool success = true;
@@ -44,11 +50,11 @@ bool Encryptor::traverseDirectory(const QString& pathFolder,
     }
     return success;
 }
-bool Encryptor::encryptDirectory(const QString& path, const QString& password) {
+bool Encryptor::encryptData(const QString& path, const QString& password) {
     return traverseDirectory(path, password, true);
 }
 
-bool Encryptor::decryptDirectory(const QString& path, const QString& password) {
+bool Encryptor::decryptData(const QString& path, const QString& password) {
     return traverseDirectory(path, password, false);
 }
 bool Encryptor::processFile(const QString& filePath,const QString& password, bool encrypt) {

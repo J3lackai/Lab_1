@@ -8,9 +8,9 @@ class Encryptor {
 public:
     static Encryptor& getInstance();
 
-    //методы для шифрования/дешифрования директории по пути
-    bool encryptDirectory(const QString& path, const QString& password);
-    bool decryptDirectory(const QString& path, const QString& password);
+    //методы для шифрования по пути
+    bool encryptData(const QString& path, const QString& password);
+    bool decryptData(const QString& path, const QString& password);
 
 private:
     Encryptor() = default;
