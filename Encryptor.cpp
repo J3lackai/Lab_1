@@ -65,28 +65,10 @@ bool Encryptor::processFile(const QString& filePath,const QString& password, boo
     }
     file.close();
     QByteArray key = deriveKey(password);
-    QString outputPath = filePath + (encrypt ? ".enc" : "");// формируем путь к файлу
-
-    if (encrypt) {
-        // Проверяем, не зашифрован ли уже файл
-        if (filePath.endsWith(".enc", Qt::CaseInsensitive)) {
-            qInfo() << "The file is already encrypted, skip it:" << filePath;
-            return true; // Просто пропускаем
-        }
-
-        encryptFile(filePath, outputPath, key);
-        QFile::remove(filePath); // Удаляем оригинал после шифрования
-    } else {
-        // Для дешифрования убираем расширение .enc
-        if (filePath.endsWith(".enc")) {
-            outputPath = filePath.left(filePath.length() - 4); // Убираем .enc
-            decryptFile(filePath, outputPath, key);
-            QFile::remove(filePath); // Удаляем зашифрованный файл
-        } else {
-            qInfo() << "Skipping non-encrypted file:" << filePath;
-            return true;
-        }
-    }
+    if (encrypt)
+        encryptFile(filePath, key);
+    else
+        decryptFile(filePath, key);
     return true;
 }
 
@@ -95,19 +77,17 @@ QByteArray Encryptor::deriveKey(const QString& password) {
     //Из пароля генерируем SHA-256 хеш, наш ключ
 }
 
-void Encryptor::encryptFile(const QString& inputPath,
-                            const QString& outputPath,
+void Encryptor::encryptFile(const QString& filePath,
                             const QByteArray& key) {
-    QFile input(inputPath);
-    QFile output(outputPath);
+    QFile file(filePath);
 
-    if (!input.open(QIODevice::ReadOnly) || !output.open(QIODevice::WriteOnly)) {
+    if (!file.open(QIODevice::ReadOnly)) {
         qInfo() << "Error opening files for encryption.";
         return;
     }
 
-    QByteArray data = input.readAll();
-    input.close();
+    QByteArray data = file.readAll();
+    file.close();
 
     // Инициализация контекста шифрования
     EVP_CIPHER_CTX *ctx;
@@ -120,8 +100,8 @@ void Encryptor::encryptFile(const QString& inputPath,
     // Инициализация шифрования AES-256 CBC
     EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, (const unsigned char*)key.data(), iv);
 
-    // Запись IV в начало выходного файла
-    output.write((char*)iv, EVP_MAX_IV_LENGTH);
+    // Запись IV в начало файла
+    file.write((char*)iv, EVP_MAX_IV_LENGTH);
 
     // ИСПРАВЛЕНО: используем вектор вместо массива переменной длины
     std::vector<unsigned char> outBuffer(data.size() + EVP_MAX_BLOCK_LENGTH);
@@ -136,32 +116,30 @@ void Encryptor::encryptFile(const QString& inputPath,
     outLen += finalLen;
 
     // Запись зашифрованных данных
-    output.write(reinterpret_cast<char*>(outBuffer.data()), outLen);
-    output.close();
+    file.write(reinterpret_cast<char*>(outBuffer.data()), outLen);
+    file.close();
 
     EVP_CIPHER_CTX_free(ctx);
-    QFile::remove(inputPath);
-    qInfo() << "Encrypted:" << inputPath << "->" << outputPath;
+    QFile::remove(filePath);
+    qInfo() << "Encrypted:" << filePath;
 }
 
-void Encryptor::decryptFile(const QString& inputPath,
-                            const QString& outputPath,
+void Encryptor::decryptFile(const QString& filePath,
                             const QByteArray& key) {
-    QFile input(inputPath);
-    QFile output(outputPath);
+    QFile file(filePath);
 
-    if (!input.open(QIODevice::ReadOnly) || !output.open(QIODevice::WriteOnly)) {
+    if (!file.open(QIODevice::WriteOnly)) {
         qInfo() << "Error opening files for decryption.";
         return;
     }
 
     // Чтение IV (первые EVP_MAX_IV_LENGTH байт файла)
     unsigned char iv[EVP_MAX_IV_LENGTH];
-    input.read((char*)iv, EVP_MAX_IV_LENGTH);
+    file.read((char*)iv, EVP_MAX_IV_LENGTH);
 
     // Чтение зашифрованных данных
-    QByteArray encryptedData = input.readAll();
-    input.close();
+    QByteArray encryptedData = file.readAll();
+    file.close();
 
     // Инициализация контекста дешифрования
     EVP_CIPHER_CTX *ctx;
@@ -183,10 +161,10 @@ void Encryptor::decryptFile(const QString& inputPath,
     outLen += finalLen;
 
     // Запись дешифрованных данных
-    output.write(reinterpret_cast<char*>(outBuffer.data()), outLen);
-    output.close();
+    file.write(reinterpret_cast<char*>(outBuffer.data()), outLen);
+    file.close();
 
     EVP_CIPHER_CTX_free(ctx);
-    QFile::remove(inputPath);
-    qInfo() << "Decrypted:" << inputPath << "->" << outputPath;
+    QFile::remove(filePath);
+    qInfo() << "Decrypted:" << filePath;
 }
