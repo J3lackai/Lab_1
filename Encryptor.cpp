@@ -45,7 +45,6 @@ bool Encryptor::traverseDirectory(const QString& path,
             // Вызов processFile у текущего экземпляра Singleton
             if (!processFile(info.absoluteFilePath(), password, encrypt))
                 success = false;
-
         }
     }
     return success;
@@ -59,7 +58,7 @@ bool Encryptor::decryptData(const QString& path, const QString& password) {
 }
 bool Encryptor::processFile(const QString& filePath,const QString& password, bool encrypt) {
     QFile file(filePath);
-    if (!file.open(QIODevice::ReadOnly)) {
+    if (!file.open(QIODevice::ReadWrite)) {
         qWarning() << "Cannot open file for reading:" << filePath;
         return false;
     }
@@ -80,15 +79,15 @@ QByteArray Encryptor::deriveKey(const QString& password) {
 void Encryptor::encryptFile(const QString& filePath,
                             const QByteArray& key) {
     QFile file(filePath);
-
-    if (!file.open(QIODevice::ReadOnly)) {
+    if (!file.open(QIODevice::ReadWrite)) {
         qInfo() << "Error opening files for encryption.";
         return;
     }
 
     QByteArray data = file.readAll();
-    file.close();
 
+    // Возвращаемся в начало файла для перезаписи
+        file.seek(0);
     // Инициализация контекста шифрования
     EVP_CIPHER_CTX *ctx;
     ctx = EVP_CIPHER_CTX_new();
@@ -117,6 +116,8 @@ void Encryptor::encryptFile(const QString& filePath,
 
     // Запись зашифрованных данных
     file.write(reinterpret_cast<char*>(outBuffer.data()), outLen);
+    // Усекаем файл до фактического размера зашифрованных данных + IV
+    file.resize(file.pos());
     file.close();
 
     EVP_CIPHER_CTX_free(ctx);
@@ -127,7 +128,7 @@ void Encryptor::decryptFile(const QString& filePath,
                             const QByteArray& key) {
     QFile file(filePath);
 
-    if (!file.open(QIODevice::WriteOnly)) {
+    if (!file.open(QIODevice::ReadWrite)) {
         qInfo() << "Error opening files for decryption.";
         return;
     }
@@ -138,8 +139,8 @@ void Encryptor::decryptFile(const QString& filePath,
 
     // Чтение зашифрованных данных
     QByteArray encryptedData = file.readAll();
-    file.close();
-
+    // Возвращаемся в начало файла для перезаписи
+        file.seek(0);
     // Инициализация контекста дешифрования
     EVP_CIPHER_CTX *ctx;
     ctx = EVP_CIPHER_CTX_new();
@@ -161,6 +162,7 @@ void Encryptor::decryptFile(const QString& filePath,
 
     // Запись дешифрованных данных
     file.write(reinterpret_cast<char*>(outBuffer.data()), outLen);
+    file.resize(file.pos());
     file.close();
 
     EVP_CIPHER_CTX_free(ctx);
