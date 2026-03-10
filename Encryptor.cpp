@@ -120,7 +120,6 @@ void Encryptor::encryptFile(const QString& filePath,
     file.close();
 
     EVP_CIPHER_CTX_free(ctx);
-    QFile::remove(filePath);
     qInfo() << "Encrypted:" << filePath;
 }
 
@@ -165,6 +164,5 @@ void Encryptor::decryptFile(const QString& filePath,
     file.close();
 
     EVP_CIPHER_CTX_free(ctx);
-    QFile::remove(filePath);
     qInfo() << "Decrypted:" << filePath;
 }
