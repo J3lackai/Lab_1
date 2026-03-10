@@ -18,8 +18,6 @@ int main()
 
     qInfo() << "Input password: ";
     QString pswrd = in.readLine();
-    qInfo() << "\nBefore decrypting, be sure to save a copy of the encrypted files,\n"
-               "because if the password was entered incorrectly, the data will be permanently lost!!!\n";
     string mode;
     while(mode != "e" && mode != "d")
     {
