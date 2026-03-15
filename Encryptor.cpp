@@ -136,10 +136,10 @@ void Encryptor::encryptFile(const QString& filePath,
     // Запись зашифрованных данных
     file.write(reinterpret_cast<char*>(outBuffer.data()), outLen);
 
-    // *** ИСПРАВЛЕНИЕ: Сохраняем текущую позицию ***
+    // Сохраняем текущую позицию ***
     qint64 endOfDataPos = file.pos();
 
-    // *** ИСПРАВЛЕНИЕ: Возвращаемся в начало и читаем все записанные данные ***
+    // Возвращаемся в начало и читаем все записанные данные ***
     file.seek(0);
     QByteArray fileDataForHMAC = file.read(endOfDataPos); // Читаем от начала до конца данных
 
@@ -154,7 +154,7 @@ void Encryptor::encryptFile(const QString& filePath,
          (const unsigned char*)fileDataForHMAC.constData(), fileDataForHMAC.size(),
          hmac, &hmacLen);
 
-    // *** ИСПРАВЛЕНИЕ: Возвращаемся в конец данных и записываем HMAC ***
+    // Возвращаемся в конец данных и записываем HMAC ***
     file.seek(endOfDataPos);
     file.write((char*)hmac, 32);
 
