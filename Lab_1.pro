@@ -1,5 +1,5 @@
 QT = core
-
+QT += testlib gui widgets
 CONFIG += static c++17 cmdline
 LIBS += -lws2_32 -lgdi32 -lcrypt32 -luser32
 LIBS += $$PWD/openssl/lib/libcrypto.lib \
@@ -11,8 +11,9 @@ INCLUDEPATH = $$PWD/openssl/include
 SOURCES += \
         Encryptor.cpp \
         main.cpp \
-        openssl/include/openssl/applink.c
-        Encryptor.h
+        openssl/include/openssl/applink.c \
+        Encryptor.h\
+        test_encryptor.cpp
 
 
 # Default rules for deployment.
