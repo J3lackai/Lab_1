@@ -13,7 +13,7 @@ SOURCES += \
         main.cpp \
         openssl/include/openssl/applink.c \
         Encryptor.h\
-        test_encryptor.cpp
+        run_tests.cpp \
 
 
 # Default rules for deployment.
@@ -166,7 +166,8 @@ HEADERS += \
     openssl/include/openssl/x509_vfy.h \
     openssl/include/openssl/x509err.h \
     openssl/include/openssl/x509v3.h \
-    openssl/include/openssl/x509v3err.h
+    openssl/include/openssl/x509v3err.h \
+    TestEncryptor.h
 
 DISTFILES += \
     openssl/lib/libcrypto.lib \
