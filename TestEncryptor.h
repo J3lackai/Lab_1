@@ -24,12 +24,12 @@ public:
         generateUniqueTestEnvironment();
 
         try {
-            qInfo() <<"What a test-case?:            | if true then without errors";
-            qInfo() <<"testEncryptionFile()          |"<<testEncryptionFile();
-            qInfo() <<"testEncryptionDir()           |"<<testEncryptionDir();
-            qInfo() <<"testEncryptionWithWrongPswrd()|"<<testEncryptionWithWrongPswrd();
-            qInfo() <<"testEncryptionCurDir()        |"<<testEncryptionCurDir();
-            qInfo() <<"testHmacIntegrityCheck()      |"<<testHmacIntegrityCheck();
+            qInfo() <<"What a test-case?:        | if true then without errors\n";
+            qInfo() <<"testEncryptionFile()      | "<<testEncryptionFile()<<"\n";
+            qInfo() <<"testEncryptionDir()       | "<<testEncryptionDir()<<"\n";
+            qInfo() <<"testEncryptionWrongPswrd()| "<<testEncryptionWrongPswrd()<<"\n";
+            qInfo() <<"testEncryptionCurDir()    | "<<testEncryptionCurDir()<<"\n";
+            qInfo() <<"testHmacIntegrityCheck()  | "<<testHmacIntegrityCheck()<<"\n";
 
         } catch (const std::exception& e) {
             qInfo() << "EXCEPTION:" << e.what();
@@ -81,11 +81,11 @@ private:
         fileToWrite.close();
         ////////////////////////////////////////////////////////////////ШИФРУЕМ-ДЕШИФРУЕМ
         if (!enc.encryptData(pathFile, pswrd)) {
-            throw std::runtime_error("Encryption failed");
+            return false;
         }
 
         if (!enc.decryptData(pathFile, pswrd)) {
-            throw std::runtime_error("Decryption failed or wrong password");
+            return false;
         }
         ////////////////////////////////////////////////////////////////ПРОВЕРЯЕМ РЕЗУЛЬТАТ
         QFile fileToRead(pathFile);
@@ -99,7 +99,7 @@ private:
         return true;
     }
 
-    bool testEncryptionDir() {
+    bool testEncryptionDir(bool wrongpswrd = false) {
         Encryptor& enc = Encryptor::getInstance();
         QString dirPath = path;
         QDir testSubdir(dirPath + "/sub_folder_1");//Создали подпапку в C:/tests
@@ -122,10 +122,12 @@ private:
         fileInFolder.close();
         ////////////////////////////////////////////////////////////////ШИФРУЕМ-ДЕШИФРУЕМ
         if (!enc.encryptData(dirPath, pswrd)) {
-        throw std::runtime_error("Encryption of directory failed");
+            return false;
         }
+        if (wrongpswrd)
+            return enc.decryptData(dirPath, QString("1"));//Правильный пароль начинается с SecurePass...
         if (!enc.decryptData(dirPath, pswrd)) {
-            throw std::runtime_error("Decryption of directory failed");
+            return false;
         }
 
         ////////////////////////////////////////////////////////////////ПРОВЕРЯЕМ РЕЗУЛЬТАТ
@@ -146,16 +148,41 @@ private:
         return true;
     }
 
-    bool testEncryptionWithWrongPswrd() {
-        return true;
-    }
+    bool testEncryptionWrongPswrd() {
+            return !testEncryptionDir(true); // Ожидаем что защита сработает encryptData вернёт false
+        }
 
     bool testEncryptionCurDir() {
-        return true;
+        Encryptor& enc = Encryptor::getInstance();
+        QString cur_path = QDir::current().path();
+        qDebug() << "Current Project Path:" << cur_path;
+
+        return !enc.encryptData(cur_path, pswrd);// Ожидаем что защита сработает encryptData вернёт false
     }
 
     bool testHmacIntegrityCheck() {
-        return true;
+        Encryptor& enc = Encryptor::getInstance();
+        ////////////////////////////////////////////////////////////////ПОДГОТОВКА ФАЙЛА В ПАПКЕ
+        QString pathFile = path + "/data.txt";
+        QFile fileToWrite(pathFile);
+        if (!fileToWrite.open(QIODevice::WriteOnly))
+            throw std::runtime_error("Cannot create test file");
+        QByteArray originalData("This is a secret message for testing AES-256-CBC.");
+        fileToWrite.write(originalData);
+        fileToWrite.close();
+        ////////////////////////////////////////////////////////////////ШИФРУЕМ
+        if (!enc.encryptData(pathFile, pswrd)) {
+            return false;
         }
+        ////////////////////////////////////////////////////////////////ПОРТИМ СОДЕРЖИМОЕ
+        QFile fileToDamage(pathFile);
+        if (!fileToDamage.open(QIODevice::WriteOnly))
+            throw std::runtime_error("Cannot open encrypted file");
+        QByteArray wrongData("ia isportil polzovatelskie dannie haha");
+        fileToDamage.write(wrongData);
+        fileToDamage.close();
+        ////////////////////////////////////////////////////////////////ДЕШИФРУЕМ
+        return !enc.decryptData(pathFile, pswrd); // Ожидаем что защита сработает decryptData вернёт false
+    }
 
 };

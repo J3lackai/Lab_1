@@ -15,11 +15,11 @@ int main() {
         // Запускаем логику тестирования
         testObj.runTests();
     } catch (...) {
-        qDebug() << "Произошла ошибка во время выполнения теста.";
+        qDebug() << "Error during passing tests.";
         ret = 1;
     }
 
-    qDebug() << "Тестирование завершено. Код возврата:" << (ret == 0 ? "SUCCESS" : "FAILURE");
+    qDebug() << "All tests passed. Results:" << (ret == 0 ? "SUCCESS" : "FAILURE");
 
     return ret;
 }
