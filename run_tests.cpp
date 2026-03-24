@@ -9,24 +9,15 @@ int main() {
 
     try {
         QTextStream in(stdin);
-
-        qInfo() << "Input path: ";
-        QString path = in.readLine();
-
-        qInfo() << "Input password: ";
-        QString pswrd = in.readLine();
         // Создаем экземпляр теста.
-        TestUnitLogic testObj;
+        TestEncryptor testObj;
 
         // Запускаем логику тестирования
-        testObj.runTests(path, pswrd);
-        delete &testObj;
+        testObj.runTests();
     } catch (...) {
         qDebug() << "Произошла ошибка во время выполнения теста.";
         ret = 1;
     }
-
-
 
     qDebug() << "Тестирование завершено. Код возврата:" << (ret == 0 ? "SUCCESS" : "FAILURE");
 
