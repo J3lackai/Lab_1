@@ -8,7 +8,7 @@
 
 using namespace std;
 
-/*
+
 int main()
 {
     QTextStream in(stdin);
@@ -33,4 +33,4 @@ int main()
         res = enc.decryptData(path, pswrd) ? "\nComplete decrypt!" : "\nError decrypt!";
     qInfo() << res;
     return 0;
-}*/
+}

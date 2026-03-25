@@ -209,6 +209,7 @@ bool TestEncryptor::testHugePswrd()
     return res;
 
 }
+/*
 int main() {
 
     qInfo() << "Run Unit-tests...";
@@ -231,3 +232,4 @@ int main() {
 
     return ret;
 }
+*/
