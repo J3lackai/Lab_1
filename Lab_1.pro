@@ -12,8 +12,7 @@ SOURCES += \
         Encryptor.cpp \
         main.cpp \
         openssl/include/openssl/applink.c \
-        run_tests.cpp \
-    tests/run_tests.cpp
+        tests/run_tests.cpp
 
 
 # Default rules for deployment.
@@ -25,9 +24,8 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 # Остальные удалены, так как они не нужны для AES-шифрования файлов.
 HEADERS += \
     Encryptor.h \
-    TestEncryptor.h \
+    tests/TestEncryptor.h \
     openssl/include/openssl/aes.h \
-    tests/TestEncryptor.h
     openssl/include/openssl/asn1.h
     openssl/include/openssl/bio.h
     openssl/include/openssl/cmac.h  # Часто используется внутри EVP, если нет полной сборки
