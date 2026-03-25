@@ -1,6 +1,6 @@
 #include <QDebug>
 #include <string>
-#include <TestEncryptor.h>
+#include <tests/TestEncryptor.h>
 using namespace std;
 void TestEncryptor::generateUniqueTestEnvironment() {
     QString uniqueId = "test_" + QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss_zzz");
