@@ -18,12 +18,12 @@ void TestEncryptor::generateUniqueTestEnvironment() {
     }
 
     path = baseDirPath;
-    qDebug() << "Test Environment Created:" << path;
-    qDebug() << "Password:" << pswrd;
+    qInfo() << "Test Environment Created:" << path;
+    qInfo() << "Password:" << pswrd;
 }
 void TestEncryptor::cleanupTestEnvironment() {
     if (!path.isEmpty()) {
-        qDebug() << "Cleaning up test directory:" << path;
+        qInfo() << "Cleaning up test directory:" << path;
         QDir(path).removeRecursively();
         path = "";
         pswrd = "";
@@ -140,7 +140,7 @@ bool TestEncryptor::testEncryptionWrongPswrd() {
 bool TestEncryptor::testEncryptionCurDir() {
     Encryptor& enc = Encryptor::getInstance();
     QString cur_path = QDir::current().path();
-    qDebug() << "Current Project Path:" << cur_path;
+    qInfo() << "Current Project Path:" << cur_path;
     if (!enc.encryptData(cur_path, pswrd))
         return true;
     enc.decryptData(cur_path, pswrd); //Если смогли зашифровать, расшифровываем для последующих тестов
@@ -180,14 +180,14 @@ bool TestEncryptor::testPathNoExist()
 {
     Encryptor& enc = Encryptor::getInstance();
     QString cur_path = QString("1"); //Записали не существующий путь
-    qDebug() << "Current Project Path:" << cur_path;
+    qInfo() << "Current Project Path:" << cur_path;
     return !enc.encryptData(cur_path, pswrd);
 }
 bool TestEncryptor::testEmptyPswrd()
 {
     Encryptor& enc = Encryptor::getInstance();
     QString cur_pswrd = QString(""); //Записали пустой пароль
-    qDebug() << "Current Pswrd: ''";
+    qInfo() << "Current Pswrd: ''";
     if (enc.encryptData(path, cur_pswrd)) //Шифрование должно пройти
         return true;
     enc.decryptData(path, cur_pswrd); //Если смогли зашифровать, расшифровываем для последующих тестов
