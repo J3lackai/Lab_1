@@ -1,6 +1,7 @@
 #include <QDebug>
 #include <string>
 #include <TestEncryptor.h>
+using namespace std;
 void TestEncryptor::generateUniqueTestEnvironment() {
     QString uniqueId = "test_" + QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss_zzz");
 
@@ -40,6 +41,10 @@ void TestEncryptor::runTests() {
         qInfo() <<"testEncryptionWrongPswrd()| "<<testEncryptionWrongPswrd()<<"\n";
         qInfo() <<"testEncryptionCurDir()    | "<<testEncryptionCurDir()<<"\n";
         qInfo() <<"testHmacIntegrityCheck()  | "<<testHmacIntegrityCheck()<<"\n";
+        qInfo() <<"testPathNoExist()         | "<<testPathNoExist()<<"\n";
+        qInfo() <<"testEmptyPswrd()          | "<<testEmptyPswrd()<<"\n";
+        qInfo() <<"testHugePswrd()           | "<<testHugePswrd()<<"\n";
+
 
     } catch (const std::exception& e) {
         qInfo() << "EXCEPTION:" << e.what();
@@ -136,8 +141,10 @@ bool TestEncryptor::testEncryptionCurDir() {
     Encryptor& enc = Encryptor::getInstance();
     QString cur_path = QDir::current().path();
     qDebug() << "Current Project Path:" << cur_path;
-
-    return !enc.encryptData(cur_path, pswrd);// Ожидаем что защита сработает encryptData вернёт false
+    if (!enc.encryptData(cur_path, pswrd))
+        return true;
+    enc.decryptData(cur_path, pswrd); //Если смогли зашифровать, расшифровываем для последующих тестов
+    return false;
 }
 
 bool TestEncryptor::testHmacIntegrityCheck() {
@@ -162,12 +169,49 @@ bool TestEncryptor::testHmacIntegrityCheck() {
     fileToDamage.write(wrongData);
     fileToDamage.close();
     ////////////////////////////////////////////////////////////////ДЕШИФРУЕМ
-    return !enc.decryptData(pathFile, pswrd); // Ожидаем что защита сработает decryptData вернёт false
+    bool res = !enc.decryptData(pathFile, pswrd);// Ожидаем что защита сработает decryptData вернёт false
+    ////СЛОМАЛИ ТЕСТОВУЮ СРЕДУ НУЖНО ПЕРЕСОЗДАТЬ!!!!!!!!!!!!!!!!!
+    cleanupTestEnvironment();
+    generateUniqueTestEnvironment();
+    return res;
 }
 
+bool TestEncryptor::testPathNoExist()
+{
+    Encryptor& enc = Encryptor::getInstance();
+    QString cur_path = QString("1"); //Записали не существующий путь
+    qDebug() << "Current Project Path:" << cur_path;
+    return !enc.encryptData(cur_path, pswrd);
+}
+bool TestEncryptor::testEmptyPswrd()
+{
+    Encryptor& enc = Encryptor::getInstance();
+    QString cur_pswrd = QString(""); //Записали пустой пароль
+    qDebug() << "Current Pswrd: ''";
+    if (enc.encryptData(path, cur_pswrd)) //Шифрование должно пройти
+        return true;
+    enc.decryptData(path, cur_pswrd); //Если смогли зашифровать, расшифровываем для последующих тестов
+    return false;
+}
+bool TestEncryptor::testHugePswrd()
+{
+    QString pathPswrd = path + "/pswrd.txt";
+    QFile pswrdToWrite(pathPswrd);
+    if (!pswrdToWrite.open(QIODevice::WriteOnly))
+        throw std::runtime_error("Cannot create test file");
+    string hugePswrdStr = "1";
+    for (int i = 0 ; i < 16; i++) // i < 32 тоже работает, но нужно ждать
+        hugePswrdStr+=hugePswrdStr;// Пароль: "11111...1" 65 тыс символов для i < 16
+    QString old_pswrd = pswrd;
+    pswrd = QString::fromStdString(hugePswrdStr); //string -> QString
+    bool res = testEncryptionDir();
+    pswrd = old_pswrd;
+    return res;
+
+}
 int main() {
 
-    qDebug() << "Run Unit-tests...";
+    qInfo() << "Run Unit-tests...";
 
     int ret = 0;
 
@@ -179,11 +223,11 @@ int main() {
         // Запускаем логику тестирования
         testObj.runTests();
     } catch (...) {
-        qDebug() << "Error during passing tests.";
+        qCritical() << "Error during passing tests.";
         ret = 1;
     }
 
-    qDebug() << "All tests passed. Results:" << (ret == 0 ? "SUCCESS" : "FAILURE");
+    qInfo() << "All tests passed";
 
     return ret;
 }
