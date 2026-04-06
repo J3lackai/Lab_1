@@ -24,5 +24,6 @@ private:
     bool testPathNoExist();
     bool testEmptyPswrd();
     bool testHugePswrd();
+    bool testNoEncryptLabel();
 };
 #endif

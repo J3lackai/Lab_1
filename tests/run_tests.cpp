@@ -1,5 +1,6 @@
 #include <QDebug>
 #include <string>
+#include <QProcess>
 #include <tests/TestEncryptor.h>
 using namespace std;
 void TestEncryptor::generateUniqueTestEnvironment() {
@@ -44,6 +45,7 @@ void TestEncryptor::runTests() {
         qInfo() <<"testPathNoExist()         | "<<testPathNoExist()<<"\n";
         qInfo() <<"testEmptyPswrd()          | "<<testEmptyPswrd()<<"\n";
         qInfo() <<"testHugePswrd()           | "<<testHugePswrd()<<"\n";
+        qInfo() <<"testNoEncryptLabel()      | "<<testNoEncryptLabel()<<"\n";
 
 
     } catch (const std::exception& e) {
@@ -208,6 +210,116 @@ bool TestEncryptor::testHugePswrd()
     pswrd = old_pswrd;
     return res;
 
+}
+bool TestEncryptor::testNoEncryptLabel() {
+    Encryptor& enc = Encryptor::getInstance();
+
+    // Создаем структуру папок
+    QString subFolder1Path = path + "/sub_folder_1";
+    QString subFolder2Path = path + "/sub_folder_2";
+
+    QDir subFolder1(subFolder1Path);
+    QDir subFolder2(subFolder2Path);
+
+    // Создаем обе папки
+    if (!subFolder1.mkpath("."))
+        throw std::runtime_error("Cannot create sub_folder_1");
+    if (!subFolder2.mkpath("."))
+        throw std::runtime_error("Cannot create sub_folder_2");
+
+    // Создаем тестовый файл в sub_folder_2
+    QString actualFilePath = subFolder2Path + "/test_data_in_sub_folder_2.txt";
+    QFile testFileInSub2(actualFilePath);
+    if (!testFileInSub2.open(QIODevice::WriteOnly)) {
+        throw std::runtime_error("Cannot create test file in sub_folder_2");
+    }
+
+    QByteArray originalData("This is secret data that should not be encrypted via shortcut");
+    testFileInSub2.write(originalData);
+    testFileInSub2.close();
+
+    // СОЗДАЕМ .LNK ЯРЛЫК через PowerShell
+    QString shortcutPath = subFolder1Path + "/link_to_sub_folder_2.lnk";
+    // PowerShell скрипт для создания ярлыка
+    QString psScript = QString(
+        "$WScriptShell = New-Object -ComObject WScript.Shell; "
+        "$Shortcut = $WScriptShell.CreateShortcut('%1'); "
+        "$Shortcut.TargetPath = '%2'; "
+        "$Shortcut.Save();"
+    ).arg(QDir::toNativeSeparators(shortcutPath))
+     .arg(QDir::toNativeSeparators(subFolder2Path));
+
+    QProcess process;
+    process.start("powershell.exe", QStringList() << "-Command" << psScript);
+    process.waitForFinished();
+
+    if (process.exitCode() != 0) {
+        QString error = process.readAllStandardError();
+        qWarning() << "Failed to create .lnk shortcut:" << error;
+        return false;
+    }
+
+    qInfo() << "Created .lnk shortcut via PowerShell:" << shortcutPath;
+
+    // Проверяем, что ярлык создался
+    if (!QFile::exists(shortcutPath)) {
+        qWarning() << "Shortcut was not created";
+        return false;
+    }
+
+    QFileInfo shortcutInfo(shortcutPath);
+    qInfo() << "Shortcut size:" << shortcutInfo.size();
+
+    // Шифруем папку sub_folder_1
+    qInfo() << "Encrypting sub_folder_1...";
+    if (!enc.encryptData(subFolder1Path, pswrd)) {
+        qWarning() << "Failed to encrypt sub_folder_1";
+        return false;
+    }
+
+    // Проверяем, что файл в sub_folder_2 остался не зашифрован
+    QFile checkFileInSub2(actualFilePath);
+    if (!checkFileInSub2.open(QIODevice::ReadOnly)) {
+        qWarning() << "Cannot open file in sub_folder_2 after encryption";
+        return false;
+    }
+
+    QByteArray resultData = checkFileInSub2.readAll();
+    checkFileInSub2.close();
+
+    if (resultData != originalData) {
+        qWarning() << "Data in sub_folder_2 was modified after encrypting sub_folder_1";
+        return false;
+    }
+
+    qInfo() << "Data in sub_folder_2 remains untouched after encryption";
+
+    // Расшифровываем папку sub_folder_1
+    qInfo() << "Decrypting sub_folder_1...";
+    if (!enc.decryptData(subFolder1Path, pswrd)) {
+        qWarning() << "Failed to decrypt sub_folder_1";
+        return false;
+    }
+
+    qInfo() << "Successfully decrypted sub_folder_1";
+
+    // Файл в sub_folder_2 все еще должен быть доступен
+    QFile finalCheckFile(actualFilePath);
+    if (!finalCheckFile.open(QIODevice::ReadOnly)) {
+        qWarning() << "Cannot open file in sub_folder_2 after decryption";
+        return false;
+    }
+
+    QByteArray finalData = finalCheckFile.readAll();
+    finalCheckFile.close();
+
+    if (finalData != originalData) {
+        qWarning() << "Data in sub_folder_2 was corrupted after decryption";
+        return false;
+    }
+
+    qInfo() << "All checks passed: sub_folder_2 was not encrypted via .lnk shortcut ";
+    return true;
 }
 /*
 int main() {
